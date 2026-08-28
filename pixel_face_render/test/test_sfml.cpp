@@ -18,11 +18,25 @@ int main(){
     // test_circ.setPosition(sf::Vector2f(512/2, 512/2));
     
     // rectangle object construction
-    float rec_width = 50.0, rec_height = 10.0;
-    sf::RectangleShape rec(sf::Vector2f(50.0,10.0));
-    rec.setFillColor(sf::Color::Blue);
-    rec.setOrigin(sf::Vector2f(rec_width, rec_height));
-    rec.setPosition(sf::Vector2f(512/2,512/2));
+    // float aspect_ratio = 0.5; // unused
+    float rec_width = 100.0, rec_height = 50.0;
+    // sf::RectangleShape rec(sf::Vector2f(rec_width,rec_height));
+    // rec.setFillColor(sf::Color::Blue);
+    // rec.setOrigin(sf::Vector2f(rec_width, rec_height));
+    // rec.setPosition(sf::Vector2f(512/2,512/2));
+
+
+    // using convex shape func for some polygon drawing
+    sf::ConvexShape polygon;
+    polygon.setPointCount(4);
+    // clockwise cycle ordering (manually set)
+    polygon.setPoint(0, sf::Vector2f(0, 0));
+    polygon.setPoint(1, sf::Vector2f(rec_width, 0));
+    polygon.setPoint(2, sf::Vector2f(rec_width, rec_height));
+    polygon.setPoint(3, sf::Vector2f(0, rec_height));
+    polygon.setFillColor(sf::Color::Blue);
+    polygon.setOrigin(sf::Vector2f(rec_width/2, rec_height/2));
+    polygon.setPosition(sf::Vector2f(512/2, 512/2));
 
     while(window.isOpen()){
         sf::Event event;
@@ -37,7 +51,7 @@ int main(){
         window.clear(sf::Color::Black);
 
         // drawing a dot or a block or coloring a pixel
-        window.draw(rec);
+        window.draw(polygon);
 
         window.display();
 
