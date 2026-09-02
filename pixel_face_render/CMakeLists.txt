@@ -7,6 +7,7 @@ endif()
 
 find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system)
 
+# change the instructions structure below later using INTERFACE lib linking if required
 add_executable(hello_sfml test/test_sfml.cpp)
 target_link_libraries(hello_sfml
     PRIVATE
@@ -15,8 +16,27 @@ target_link_libraries(hello_sfml
         sfml-system
 )
 
+add_executable(test_face test/test_face.cpp)
+target_link_libraries(test_face
+    PRIVATE
+        sfml-graphics
+        sfml-window
+        sfml-system
+)
+
+add_executable(test_face_anim test/test_face_anim.cpp)
+target_link_libraries(test_face_anim
+    PRIVATE
+        sfml-graphics
+        sfml-window
+        sfml-system
+)
+
+
 install(
     TARGETS
         hello_sfml
+        test_face
+        test_face_anim
     RUNTIME DESTINATION bin/${PROJECT_NAME} 
 )
