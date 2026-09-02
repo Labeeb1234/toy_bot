@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <cmath>
+#include <cstdio>
+#include <random>
 
 
 using namespace std;
@@ -21,10 +23,10 @@ struct Eye{
     float rotation{0.0f}; // only 3d rotations needs to be in quaternions (we are in 2D btw so just yaw is there)
 
     // pupil
-    float pupil_radius{15.0f};
-    // put the pupil TF origin at the REC EYE's centre
-    float pupil_posx{0.0f};
-    float pupil_posy{0.0f};
+    float pupil_radius{10.0f};
+    // put the pupil TF origin at the REC EYE's centre/ otherwise referred as pupil offset wrt centre of eye
+    float pupil_offsetX{0.0f};
+    float pupil_offsetY{0.0f};
     // rotation is useless for a circle symmetry
 };
 
@@ -53,15 +55,17 @@ private:
         return rec_eye;
     }
     sf::CircleShape make_pupil(
-        const float pupil_radius, const float eye_posx, const float eye_posy,
-        const float eye_len, const float eye_width
+        const float pupil_radius, 
+        const float eye_pos_x, const float eye_pos_y,
+        const float eye_len, const float eye_width,
+        const float pupil_offset_x, const float pupil_offset_y
     ){
         sf::CircleShape circle_pupil(pupil_radius);
-        float pupil_origin_x = eye_posx + (eye_len/2);
-        float pupil_origin_y = eye_posy + (eye_width/2);
+        float pupil_pos_x = eye_pos_x + (eye_len)/2 + pupil_offset_x;
+        float pupil_pos_y = eye_pos_y + (eye_width/2) + pupil_offset_y;
         circle_pupil.setFillColor(sf::Color::White);
         circle_pupil.setOrigin(sf::Vector2f(pupil_radius, pupil_radius));
-        circle_pupil.setPosition(sf::Vector2f(pupil_origin_x, pupil_origin_y)); // wrt the respective eye
+        circle_pupil.setPosition(sf::Vector2f(pupil_pos_x, pupil_pos_y)); // wrt the respective eye
         return circle_pupil;
     }
 
@@ -97,16 +101,18 @@ public:
             eye_left_.eye_length, eye_left_.eye_width
         );
         sf::CircleShape pupil_left = make_pupil(
-            eye_left_.pupil_radius, eye_left_.eye_posx,
-            eye_left_.eye_posy, eye_left_.eye_length, eye_left_.eye_width
+            eye_left_.pupil_radius, eye_left_.eye_posx, eye_left_.eye_posy,
+            eye_left_.eye_length, eye_left_.eye_width,
+            eye_left_.pupil_offsetX, eye_left_.pupil_offsetY
         );
         sf::ConvexShape eye_right = make_eye(
             eye_right_.eye_posx, eye_right_.eye_posy,
             eye_right_.eye_length, eye_right_.eye_width
         );
         sf::CircleShape pupil_right = make_pupil(
-            eye_right_.pupil_radius, eye_right_.eye_posx,
-            eye_right_.eye_posy, eye_right_.eye_length, eye_right_.eye_width
+            eye_right_.pupil_radius, eye_right_.eye_posx, eye_right_.eye_posy,
+            eye_right_.eye_length, eye_right_.eye_width,
+            eye_right_.pupil_offsetX, eye_right_.pupil_offsetY
         );
         face_canvas_.draw(eye_left);
         face_canvas_.draw(eye_right);
@@ -133,6 +139,7 @@ public:
 };
 
 
+// gaze anim testing
 
 int main(int argc, char** argv){
 
@@ -141,9 +148,31 @@ int main(int argc, char** argv){
         sf::VideoMode(window_size, window_size, 32U), 
         "Two_Eye_Face_Animation_Testing"
     );
+    // init clock object for SFML window
+    sf::Clock clock;
+
 
     Face* face = new Face(512);
     face->create_face();
+
+
+    double t = 0.0;
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> amp_dist(1.0f, 10.0f);
+    std::uniform_real_distribution<float> omega_dist(5.0f, 6.0f);
+    std::uniform_real_distribution<float> phase_dist(0.0f, 2.0f * M_PI);
+    
+    float amp1 = amp_dist(gen);
+    float omega_driving1 = omega_dist(gen); // in rads/s
+    float phase1 = phase_dist(gen);
+    float amp2 = amp_dist(gen);
+    float omega_driving2 = omega_dist(gen);
+    float phase2 = phase_dist(gen);
+
+
+    // change forcing function to LERP animation for naturallity of gazing (TODO)
 
     while(window.isOpen()){
         sf::Event event;
@@ -155,19 +184,33 @@ int main(int argc, char** argv){
                 }
             }
         }
+
+        // get animation update rate
+        float dt = clock.restart().asSeconds();
+        
+        // physics/setup update
+        t += dt;
+        Eye& left_eye = face->get_left_eye(); // return by reference
+        Eye& right_eye = face->get_right_eye();
+        float left_pupil_offsetX = amp1*cos(omega_driving1*t+phase1); // TODO: clamp withing eye dimensions
+        float left_pupil_offsetY = amp1*cos(omega_driving1*t+phase1);
+        left_eye.pupil_offsetX = left_pupil_offsetX;
+        left_eye.pupil_offsetY = left_pupil_offsetY;
+
+        float right_pupil_offsetX = amp2*sin(omega_driving2*t+phase2);
+        float right_pupil_offsetY = amp2*sin(omega_driving2*t+phase2);
+        right_eye.pupil_offsetX = right_pupil_offsetX;
+        right_eye.pupil_offsetY = right_pupil_offsetY;
+
         // render
         window.clear(sf::Color::Black);
+        face->create_face();
         // drawing face (static for now)
         face->draw_face(window);
         window.display();
     }
 
-
     delete face;
-
-
-
     return 0;
-
 }
 
